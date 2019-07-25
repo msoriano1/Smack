@@ -69,6 +69,8 @@ object AuthService {
                 authToken = response.getString("token")
                 isLoggedIn = true
                 complete(true)
+                //Setting the values of the user data variables using the data passed in the response
+                //Mainly for authenticating the log in of the user
             } catch (e: JSONException){
                 Log.d("JSON", "EXC:" + e.localizedMessage)
                 complete(false)
@@ -91,6 +93,7 @@ object AuthService {
     }
 
     fun createUser(context: Context, name: String, email: String, avatarName: String, avatarColor: String, complete:(Boolean) -> Unit){
+        //User is created
         val jsonBody = JSONObject()
         //JSON object that is being passed on with the web request
         jsonBody.put("name", name)
@@ -107,6 +110,7 @@ object AuthService {
                 UserDataService.avatarName = response.getString("avatarName")
                 UserDataService.avatarColor = response.getString("avatarColor")
                 UserDataService.id = response.getString("_id")
+                //Setting the data of the user by putting the values of the response into the user variables stored in UserdData Service
 
                 complete(true)
             } catch (e: JSONException){
