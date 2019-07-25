@@ -6,6 +6,7 @@ import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.mattdog.smack.Utilities.URL_CREATE_USER
 import com.mattdog.smack.Utilities.URL_LOGIN
 import com.mattdog.smack.Utilities.URL_REGISTER
 import org.json.JSONException
@@ -19,8 +20,6 @@ object AuthService {
 
     fun registerUser(context: Context, email: String, password: String, complete: (Boolean) -> Unit){
 
-
-
         val jsonBody = JSONObject()
         //JSON object that is being passed on with the web request
         jsonBody.put("email", email)
@@ -29,7 +28,7 @@ object AuthService {
         //JSON body
 
         val registerRequest = object : StringRequest(Method.POST, URL_REGISTER, Response.Listener { response ->
-            //StringRequest is the web request
+            //StringRequest is the type of web request, expecting a String response
             //POST is the method type
             //Response.Listener is the response
             println(response)
@@ -89,6 +88,55 @@ object AuthService {
             }
         }
         Volley.newRequestQueue(context).add(loginRequest)
+    }
+
+    fun createUser(context: Context, name: String, email: String, avatarName: String, avatarColor: String, complete:(Boolean) -> Unit){
+        val jsonBody = JSONObject()
+        //JSON object that is being passed on with the web request
+        jsonBody.put("name", name)
+        jsonBody.put("email", email)
+        jsonBody.put("avatarName", avatarName)
+        jsonBody.put("avatarColor", avatarColor)
+        val requestBody = jsonBody.toString()
+        //JSON body
+
+        val createRequest = object : JsonObjectRequest(Method.POST, URL_CREATE_USER, null, Response.Listener { response ->
+            try {
+                UserDataService.name = response.getString("name")
+                UserDataService.email = response.getString("email")
+                UserDataService.avatarName = response.getString("avatarName")
+                UserDataService.avatarColor = response.getString("avatarColor")
+                UserDataService.id = response.getString("_id")
+
+                complete(true)
+            } catch (e: JSONException){
+                Log.d("JSON", "EXC:" + e.localizedMessage)
+                complete(false)
+            }
+
+
+        }, Response.ErrorListener {error ->
+            Log.d("ERROR", "Could not add user: $error")
+            complete(false)
+        }) {
+            override fun getBodyContentType(): String {
+                return "application/json; charset=utf-8"
+            }
+
+            override fun getBody(): ByteArray {
+                return requestBody.toByteArray()
+            }
+
+            override fun getHeaders(): MutableMap<String, String> {
+                val headers = HashMap<String, String>()
+                headers.put("Authorization", "Bearer $authToken")
+                return headers
+            }
+            //override the function getHeaders
+            //put the Authorization into the 'put' Hashmap
+        }
+
+        Volley.newRequestQueue(context).add(createRequest)
     }
 
 }
