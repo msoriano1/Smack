@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
             userEmailNavHeader.text = ""
             userImageNavHeader.setImageResource(R.drawable.profiledefault)
             userImageNavHeader.setBackgroundColor(Color.TRANSPARENT)
-            loginBtnNavHeader.text = "Login"
+            loginBtnNavHeader.text = ""
             //Setting the views to the defaults after logging out
         } else {
             val loginIntent = Intent(this, LoginActivity::class.java)
