@@ -13,6 +13,9 @@ import com.google.android.material.navigation.NavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.mattdog.smack.R
 import com.mattdog.smack.Services.AuthService
@@ -41,6 +44,8 @@ class MainActivity : AppCompatActivity() {
         )
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
+
+        hideKeyboard()
 
         LocalBroadcastManager.getInstance(this).registerReceiver(userDataChangeReceiver, IntentFilter(
             BROADCAST_USER_DATA_CHANGE))
@@ -91,11 +96,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun addChannelClicked(view: View) {
+        if (AuthService.isLoggedIn){
+            val builder = AlertDialog.Builder(this)
+            val dialogView = layoutInflater.inflate(R.layout.add_channel_dialog, null)
+            //Creates a view from XML
 
+            builder.setView(dialogView)
+                .setPositiveButton("Add"){dialogInterface, i ->  
+                    //Perform logic when clicked
+                    val nameTextField = dialogView.findViewById<EditText>(R.id.addChannelNameTxt)
+                    val descTextField = dialogView.findViewById<EditText>(R.id.addChannelDescTxt)
+                    //finding the values within the text fields in dialogView
+
+                    val channelName = nameTextField.text.toString()
+
+                    val channelDesc = descTextField.text.toString()
+
+                    hideKeyboard()
+                }
+                .setNegativeButton("Cancel"){dialogInterface, i ->  
+                    //Cancel and close the dialog
+                    hideKeyboard()
+                }
+                .show()
+        }
     }
 
     fun sendMessageBtnClicked(view: View) {
 
+    }
+
+    fun hideKeyboard(){
+        val inputManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        //casting the object as an inputmethodmanager
+
+        if (inputManager.isAcceptingText){
+            inputManager.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+        }
     }
 
 
