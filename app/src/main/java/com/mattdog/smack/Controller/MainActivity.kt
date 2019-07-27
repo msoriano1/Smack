@@ -17,20 +17,31 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.mattdog.smack.Model.Channel
 import com.mattdog.smack.R
 import com.mattdog.smack.Services.AuthService
+import com.mattdog.smack.Services.MessageService
 import com.mattdog.smack.Services.UserDataService
 import com.mattdog.smack.Utilities.BROADCAST_USER_DATA_CHANGE
+import com.mattdog.smack.Utilities.SOCKET_URL
+import io.socket.client.IO
+import io.socket.emitter.Emitter
 import kotlinx.android.synthetic.main.nav_header_main.*
 
 class MainActivity : AppCompatActivity() {
 
+    val socket = IO.socket(SOCKET_URL)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
+
+        socket.connect()
+        socket.on("channelCreated", onNewChannel)
+        //channelCreated is the name of the event, taken from the API code
+        //onNewChannel uses the function created much below to listen for a new chanel created by other users
 
         //fab - floating action bar
         //Snackbar - similar to 'Toast' that shows a message
@@ -44,14 +55,26 @@ class MainActivity : AppCompatActivity() {
         )
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
+        
+    }
 
-        hideKeyboard()
 
+    override fun onResume() {
         LocalBroadcastManager.getInstance(this).registerReceiver(userDataChangeReceiver, IntentFilter(
             BROADCAST_USER_DATA_CHANGE))
         //Register receiver initializes the Broadcast Receiver and the intent
 
+        super.onResume()
     }
+
+
+    override fun onDestroy() {
+        socket.disconnect()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(userDataChangeReceiver)
+        super.onDestroy()
+    }
+
+
 
     private val userDataChangeReceiver = object: BroadcastReceiver(){
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -112,18 +135,34 @@ class MainActivity : AppCompatActivity() {
 
                     val channelDesc = descTextField.text.toString()
 
-                    hideKeyboard()
+                    socket.emit("newChannel", channelName, channelDesc)
+
                 }
                 .setNegativeButton("Cancel"){dialogInterface, i ->  
                     //Cancel and close the dialog
-                    hideKeyboard()
                 }
                 .show()
         }
     }
 
-    fun sendMessageBtnClicked(view: View) {
+    private val onNewChannel = Emitter.Listener {args ->
+        //Extracts the info being sent by other users via an Emitter.Listener
+        //Emitter.Listener listens for updates from the web socket
+        runOnUiThread {
+            val channelName = args[0] as String
+            val channelDescription = args[1] as String
+            val channelId = args[2] as String
 
+            val newChannel = Channel(channelName, channelDescription, channelId)
+            MessageService.channels.add(newChannel)
+            println(newChannel.name)
+            println(newChannel.description)
+            println(newChannel.id)
+        }
+    }
+
+    fun sendMessageBtnClicked(view: View) {
+        hideKeyboard()
     }
 
     fun hideKeyboard(){
